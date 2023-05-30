@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 set(PATCH_VERSION "1" CACHE INTERNAL "Patch version")
 set(PROJECT_VESRION 0.0.${PATCH_VERSION})
 
-project(bulk VERSION ${PROJECT_VESRION})
+project(asyncLib VERSION ${PROJECT_VESRION})
 
 set(INTERFACES
     Include/Interfaces/Manager.hpp
@@ -44,7 +44,8 @@ target_include_directories(bulk PRIVATE "${CMAKE_BINARY_DIR}" Include)
 target_include_directories(async PRIVATE "${CMAKE_BINARY_DIR}" Include)
 target_include_directories(client PRIVATE "${CMAKE_BINARY_DIR}" Lib)
 
-install(TARGETS bulk RUNTIME DESTINATION bin)
+# install(TARGETS bulk RUNTIME DESTINATION bin)
+install(TARGETS async LIBRARY DESTINATION bin)
 
 set(CPACK_GENERATOR DEB)
 
