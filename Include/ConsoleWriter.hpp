@@ -6,7 +6,10 @@
 
 class ConsoleWriter : public IWriter {
 public:
-    ~ConsoleWriter() = default;
+    ~ConsoleWriter() {
+        // std::cout << "Destroy Writer" << std::endl;
+    }
+
     void write(const std::string& str) const override {
         std::cout << str << std::endl;
     }

@@ -38,6 +38,7 @@ void CommandManager::notifyWriter() {
 
     for (const IWriter* writer : _writers) {
         auto func = [writer, out](uint8_t id) {
+            // std::this_thread::sleep_for(std::chrono::seconds{1});
             writer->write(out);
         };
         _tWriters.enqueue(func);
@@ -45,6 +46,7 @@ void CommandManager::notifyWriter() {
 
     for (const FileWriter* writer : _fileWriters) {
         auto func = [writer, out, timeStamp = _firstCmdtimeStamp](uint8_t id) {
+            // std::this_thread::sleep_for(std::chrono::seconds{1});
             writer->write(out, timeStamp, id);
         };
         _tFileWriters.enqueue(func);

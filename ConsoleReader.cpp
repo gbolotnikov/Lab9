@@ -8,9 +8,13 @@ _commandCount(commandCount)
 
 }
 
+void ConsoleReader::setStream(std::istream& input) {
+    _input = &input;
+}
+
 void ConsoleReader::read() {
     std::string line;
-    while (std::getline(std::cin, line)) {
+    while (std::getline(*_input, line)) {
         if (line == "{") {
             openBrace();
         }

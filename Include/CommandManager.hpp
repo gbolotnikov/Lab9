@@ -1,6 +1,7 @@
 #ifndef COMMAND_MANAGER_HPP
 #define COMMAND_MANAGER_HPP
 
+#include <iostream>
 #include <unordered_set>
 #include "ThreadPool.hpp"
 #include "FileWriter.hpp"
@@ -13,7 +14,9 @@ public:
     void newCommand(std::string_view cmd) override;
     void endCommand() override;
 
-    ~CommandManager() = default;
+    ~CommandManager() {
+        // std::cout << "Destroy CommandManager" << std::endl;
+    }
 private:
 
     void notifyWriter();
