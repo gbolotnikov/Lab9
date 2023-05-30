@@ -5,9 +5,9 @@
 #include "FileWriter.hpp"
 #include "ConsoleReader.hpp"
 
-class Manager {
+class Process {
 public:    
-    Manager(std::size_t bulk) : 
+    Process(std::size_t bulk) : 
         _consoleReader(_commandManager, bulk)
     {
         _commandManager.addWriter(_consoleWriter);
@@ -23,9 +23,9 @@ public:
         _consoleReader.notifyEndCommand();
     }
 
-    ~Manager() {
+    ~Process() {
         // или здесь вызвать метод join _commandManager, чтобы дождаться потоков
-        // std::cout << "Destroy Manager" << std::endl;
+        // std::cout << "Destroy Process" << std::endl;
     }
 
 private:
@@ -39,57 +39,60 @@ private:
 
 namespace async {
 
-template<class T>
-struct maybe_deleter{
-  bool _delete;
-  explicit maybe_deleter(bool doit = true) : _delete(doit){}
+// template<class T>
+// struct maybe_deleter{
+//   bool _delete;
+//   explicit maybe_deleter(bool doit = true) : _delete(doit){}
 
-  void operator()(T* p) const{
-    if(_delete) delete p;
-  }
-};
+//   void operator()(T* p) const{
+//     if(_delete) delete p;
+//   }
+// };
 
-template<class T>
-using set_unique_ptr = std::unique_ptr<T, maybe_deleter<T>>;
+// template<class T>
+// using set_unique_ptr = std::unique_ptr<T, maybe_deleter<T>>;
 
-set_unique_ptr<Manager> make_find_ptr(handle_t raw){
-    return set_unique_ptr<Manager>(reinterpret_cast<Manager*>(raw), maybe_deleter<Manager>(false));
-}
+// set_unique_ptr<Process> make_find_ptr(handle_t raw){
+//     return set_unique_ptr<Process>(reinterpret_cast<Process*>(raw), maybe_deleter<Process>(false));
+// }
 
-static std::unordered_map<set_unique_ptr<Manager>, std::string> _connections;
+static std::unordered_map<handle_t, std::pair<std::unique_ptr<Process>, std::string>> _connections;
 static std::mutex g_mutex;
 
 handle_t connect(std::size_t bulk) {
     std::lock_guard lock(g_mutex);
-    auto [it, b] = _connections.emplace(set_unique_ptr<Manager>(new Manager(bulk)), std::string());
-    return it->first.get();
+    auto process = std::make_unique<Process>(bulk);
+    auto handle = process.get();
+    auto [it, b] = _connections.emplace(handle, std::make_pair(std::move(process), std::string()));
+    return handle;
 }
 
 void receive(handle_t handle, const char *data, std::size_t size) {
     std::lock_guard lock(g_mutex);
-    auto it = _connections.find(make_find_ptr(handle));
+    auto it = _connections.find(handle);
     if (it == _connections.end()) {
         return;
     }    
-    it->second += std::string(data, size);
+    auto& pair = it->second;
+    pair.second += std::string(data, size);
     std::string_view view(data, size);
     std::size_t pos = view.rfind('\n');
     if (pos == std::string_view::npos) {
         return;
     }
-    std::istringstream input(it->second);
-    it->second = std::string();
-    it->first->receive(input);
+    std::istringstream input(pair.second);
+    pair.second = std::string();
+    pair.first->receive(input);
 }
 
 void disconnect(handle_t handle) {
     std::lock_guard lock(g_mutex);
-    auto it = _connections.find(make_find_ptr(handle));
+    auto it = _connections.find(handle);
     if (it == _connections.end()) {
         return;
     }  
-    it->first->end();
-    _connections.erase(make_find_ptr(handle));
+    it->second.first->end();
+    _connections.erase(it);
 }
 
 }
